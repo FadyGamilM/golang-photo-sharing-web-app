@@ -19,9 +19,26 @@ func contactHandlerFunc(w http.ResponseWriter, r *http.Request) {
    `)
 }
 
+func pathRouterHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/":
+		homeHandlerFunc(w, r)
+		return
+
+	case "/contact":
+		contactHandlerFunc(w, r)
+		return
+
+	default:
+		fmt.Fprint(w, "<h1> 404 Not Found Page ! </h1>")
+		return
+	}
+}
+
 func main() {
-	http.HandleFunc("/", homeHandlerFunc)
-	http.HandleFunc("/contact", contactHandlerFunc)
+	// http.HandleFunc("/", homeHandlerFunc)
+	// http.HandleFunc("/contact", contactHandlerFunc)
+	http.HandleFunc("/", pathRouterHandler)
 	fmt.Println("server is running on port 3000")
 	http.ListenAndServe(":3000", nil)
 }
