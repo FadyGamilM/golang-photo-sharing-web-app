@@ -2,39 +2,95 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 )
 
+// ! => Helpers for parsing and executing templates
+type ParsedTempalte struct {
+	template *template.Template
+	err      error
+}
+
+func ParseTemplate(w http.ResponseWriter, templatePath string) ParsedTempalte {
+	templ, err := template.ParseFiles(templatePath)
+	if err != nil {
+		// if we here, so our template has something wrong in it
+		log.Printf("Error while parsing the template -> %v", err)
+		http.Error(w, "Server Error - Error while parsing the HTML Page", http.StatusInternalServerError)
+		return ParsedTempalte{
+			err:      err,
+			template: nil,
+		}
+	}
+	return ParsedTempalte{
+		template: templ,
+		err:      nil,
+	}
+}
+
+func ExecuteTemplate(w http.ResponseWriter, parsedTemplate ParsedTempalte) {
+	err := parsedTemplate.template.Execute(w, nil)
+	if err != nil {
+		log.Printf("Error while executing the template -> %v", err)
+		http.Error(w, "Server Error - Error while executing the HTML Page", http.StatusInternalServerError)
+		return
+	}
+}
+
 func homeHandlerFunc(w http.ResponseWriter, r *http.Request) {
+	// set the headers of the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// get the template path to render it
+	templatePath := filepath.Join("templates", "home.gohtml")
+
+	// get the result of parsing
+	parsedTemplate := ParseTemplate(w, templatePath)
+
+	// now execute it
+	ExecuteTemplate(w, parsedTemplate)
+
+	// set the status code
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "<h1>Home Page </h1>")
 }
 
 func contactHandlerFunc(w http.ResponseWriter, r *http.Request) {
+	// set the headers of the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// get the file path of the template we need to render
+	templatePath := filepath.Join("templates", "contact.gohtml")
+
+	// parse the template
+	parsedTemplate := ParseTemplate(w, templatePath)
+
+	// execute the template
+	ExecuteTemplate(w, parsedTemplate)
+
+	// set the status code
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, `
-      <h1>Contact Page</h1>
-      <p>For more info, you can contact with me at <a href=/"gamilfady605@gmail.com/"> gamilfady605@gmail.com </a> </p>
-   `)
 }
 
 func FAQHandlerFunc(w http.ResponseWriter, r *http.Request) {
+	// set the headers of the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	questionId := chi.URLParam(r, "question_id")
+
+	// get the template path to render it
+	templatePath := filepath.Join("templates", "faq.gohtml")
+
+	// parse the template
+	parsedTemplate := ParseTemplate(w, templatePath)
+
+	// execute the template
+	ExecuteTemplate(w, parsedTemplate)
+
+	// set the response status code
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w,
-		`
-		<h1> FAQ Page </h1>
-		<p> you asked for question number %v </p>
-		<h3> Can i have a free trial ? </h3>
-			<p> Yes, we have a free trial for 30 days with money back guranteed </p>
-		<h3> Do you have a supportl ? </h3>
-			<p> Yes, you can contact us at support@photoSharing.com we have a support team answering your questions 24/7 </p>
-		`, questionId)
 }
 
 // our custom router which implementes the `Handler` interface
@@ -73,7 +129,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Get("/", homeHandlerFunc)
 	r.Get("/contact", contactHandlerFunc)
-	r.Get("/faq/{question_id}", FAQHandlerFunc)
+	r.Get("/faq", FAQHandlerFunc)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "page not found", http.StatusNotFound)
 	})
