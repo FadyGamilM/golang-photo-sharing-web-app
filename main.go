@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func homeHandlerFunc(w http.ResponseWriter, r *http.Request) {
@@ -22,15 +24,17 @@ func contactHandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 func FAQHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	questionId := chi.URLParam(r, "question_id")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w,
+	fmt.Fprintf(w,
 		`
 		<h1> FAQ Page </h1>
+		<p> you asked for question number %v </p>
 		<h3> Can i have a free trial ? </h3>
 			<p> Yes, we have a free trial for 30 days with money back guranteed </p>
 		<h3> Do you have a supportl ? </h3>
 			<p> Yes, you can contact us at support@photoSharing.com we have a support team answering your questions 24/7 </p>
-		`)
+		`, questionId)
 }
 
 // our custom router which implementes the `Handler` interface
@@ -61,14 +65,20 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// instantiate our custom router
-	router := Router{}
+	// router := Router{}
 
 	// http.HandleFunc("/", homeHandlerFunc)
 	// http.HandleFunc("/contact", contactHandlerFunc)
 	// http.HandleFunc("/", pathRouterHandler)
-
+	r := chi.NewRouter()
+	r.Get("/", homeHandlerFunc)
+	r.Get("/contact", contactHandlerFunc)
+	r.Get("/faq/{question_id}", FAQHandlerFunc)
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "page not found", http.StatusNotFound)
+	})
 	fmt.Println("server is running on port 3000")
 
 	// http.ListenAndServe("127.0.0.1:3000", http.HandlerFunc(pathRouterHandler))
-	http.ListenAndServe("127.0.0.1:3000", router)
+	http.ListenAndServe("127.0.0.1:3000", r)
 }
