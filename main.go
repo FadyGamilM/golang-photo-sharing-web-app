@@ -30,15 +30,41 @@ func pathRouterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 
 	default:
-		fmt.Fprint(w, "<h1> 404 Not Found Page ! </h1>")
+		// w.WriteHeader(http.StatusNotFound)
+		// fmt.Fprint(w, "<h1> Page Not Found ! </h1>")
+		http.Error(w, "page not found", http.StatusNotFound)
+		return
+	}
+}
+
+// our custom router which implementes the `Handler` interface
+type Router struct{}
+
+// implement the interface specs
+func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/":
+		homeHandlerFunc(w, r)
+		return
+
+	case "/contact":
+		contactHandlerFunc(w, r)
+		return
+
+	default:
+		// w.WriteHeader(http.StatusNotFound)
+		// fmt.Fprint(w, "<h1> Page Not Found ! </h1>")
+		http.Error(w, "page not found", http.StatusNotFound)
 		return
 	}
 }
 
 func main() {
+	// instantiate our custom router
+	router := Router{}
 	// http.HandleFunc("/", homeHandlerFunc)
 	// http.HandleFunc("/contact", contactHandlerFunc)
-	http.HandleFunc("/", pathRouterHandler)
+	// http.HandleFunc("/", pathRouterHandler)
 	fmt.Println("server is running on port 3000")
-	http.ListenAndServe(":3000", nil)
+	http.ListenAndServe("127.0.0.1:3000", router)
 }
