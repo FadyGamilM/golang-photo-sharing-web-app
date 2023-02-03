@@ -2,45 +2,12 @@ package main
 
 import (
 	"fmt"
-	"html/template"
-	"log"
 	"net/http"
 	"path/filepath"
 
+	"github.com/FadyGamilM/photosharing/views"
 	"github.com/go-chi/chi/v5"
 )
-
-// ! => Helpers for parsing and executing templates
-type ParsedTempalte struct {
-	template *template.Template
-	err      error
-}
-
-func ParseTemplate(w http.ResponseWriter, templatePath string) ParsedTempalte {
-	templ, err := template.ParseFiles(templatePath)
-	if err != nil {
-		// if we here, so our template has something wrong in it
-		log.Printf("Error while parsing the template -> %v", err)
-		http.Error(w, "Server Error - Error while parsing the HTML Page", http.StatusInternalServerError)
-		return ParsedTempalte{
-			err:      err,
-			template: nil,
-		}
-	}
-	return ParsedTempalte{
-		template: templ,
-		err:      nil,
-	}
-}
-
-func ExecuteTemplate(w http.ResponseWriter, parsedTemplate ParsedTempalte) {
-	err := parsedTemplate.template.Execute(w, nil)
-	if err != nil {
-		log.Printf("Error while executing the template -> %v", err)
-		http.Error(w, "Server Error - Error while executing the HTML Page", http.StatusInternalServerError)
-		return
-	}
-}
 
 func homeHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	// set the headers of the response
@@ -50,10 +17,10 @@ func homeHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	templatePath := filepath.Join("templates", "home.gohtml")
 
 	// get the result of parsing
-	parsedTemplate := ParseTemplate(w, templatePath)
+	parsedTemplate := views.ParseTemplate(w, templatePath)
 
 	// now execute it
-	ExecuteTemplate(w, parsedTemplate)
+	views.ExecuteTemplate(w, parsedTemplate)
 
 	// set the status code
 	w.WriteHeader(http.StatusOK)
@@ -67,10 +34,10 @@ func contactHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	templatePath := filepath.Join("templates", "contact.gohtml")
 
 	// parse the template
-	parsedTemplate := ParseTemplate(w, templatePath)
+	parsedTemplate := views.ParseTemplate(w, templatePath)
 
 	// execute the template
-	ExecuteTemplate(w, parsedTemplate)
+	views.ExecuteTemplate(w, parsedTemplate)
 
 	// set the status code
 	w.WriteHeader(http.StatusOK)
@@ -84,10 +51,10 @@ func FAQHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	templatePath := filepath.Join("templates", "faq.gohtml")
 
 	// parse the template
-	parsedTemplate := ParseTemplate(w, templatePath)
+	parsedTemplate := views.ParseTemplate(w, templatePath)
 
 	// execute the template
-	ExecuteTemplate(w, parsedTemplate)
+	views.ExecuteTemplate(w, parsedTemplate)
 
 	// set the response status code
 	w.WriteHeader(http.StatusOK)
