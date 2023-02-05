@@ -5,60 +5,10 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/FadyGamilM/photosharing/controllers"
 	"github.com/FadyGamilM/photosharing/views"
 	"github.com/go-chi/chi/v5"
 )
-
-func homeHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	// set the headers of the response
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	// get the template path to render it
-	templatePath := filepath.Join("templates", "home.gohtml")
-
-	// get the result of parsing
-	parsedTemplate := views.ParseTemplate(w, templatePath)
-
-	// now execute it
-	views.ExecuteTemplate(w, parsedTemplate)
-
-	// set the status code
-	w.WriteHeader(http.StatusOK)
-}
-
-func contactHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	// set the headers of the response
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	// get the file path of the template we need to render
-	templatePath := filepath.Join("templates", "contact.gohtml")
-
-	// parse the template
-	parsedTemplate := views.ParseTemplate(w, templatePath)
-
-	// execute the template
-	views.ExecuteTemplate(w, parsedTemplate)
-
-	// set the status code
-	w.WriteHeader(http.StatusOK)
-}
-
-func FAQHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	// set the headers of the response
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	// get the template path to render it
-	templatePath := filepath.Join("templates", "faq.gohtml")
-
-	// parse the template
-	parsedTemplate := views.ParseTemplate(w, templatePath)
-
-	// execute the template
-	views.ExecuteTemplate(w, parsedTemplate)
-
-	// set the response status code
-	w.WriteHeader(http.StatusOK)
-}
 
 // our custom router which implementes the `Handler` interface
 type Router struct{}
@@ -79,29 +29,54 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 
 	default:
-		// w.WriteHeader(http.StatusNotFound)
-		// fmt.Fprint(w, "<h1> Page Not Found ! </h1>")
 		http.Error(w, "page not found", http.StatusNotFound)
 		return
 	}
 }
 
 func main() {
-	// instantiate our custom router
-	// router := Router{}
-
-	// http.HandleFunc("/", homeHandlerFunc)
-	// http.HandleFunc("/contact", contactHandlerFunc)
-	// http.HandleFunc("/", pathRouterHandler)
+	// => VERSION [4] using chi
+	// => create the router instance
 	r := chi.NewRouter()
-	r.Get("/", homeHandlerFunc)
-	r.Get("/contact", contactHandlerFunc)
-	r.Get("/faq", FAQHandlerFunc)
+
+	// => parse the templates before our server booted up and run
+	parsingResult := views.ParseTemplate(filepath.Join("templates", "home.gohtml"))
+	// => check if there is any error while parsing
+	if parsingResult.Err != nil {
+		panic(parsingResult.Err)
+	}
+	// => now we can utilize our controller to render the template
+	r.Get("/", (controllers.StaticHandler(parsingResult)))
+
+	parsingResult = views.ParseTemplate(filepath.Join("templates", "contact.gohtml"))
+	if parsingResult.Err != nil {
+		panic(parsingResult.Err)
+	}
+	r.Get("/contact", (controllers.StaticHandler(parsingResult)))
+
+	parsingResult = views.ParseTemplate(filepath.Join("templates", "faq.gohtml"))
+	if parsingResult.Err != nil {
+		panic(parsingResult.Err)
+	}
+	r.Get("/faq", (controllers.StaticHandler(parsingResult)))
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "page not found", http.StatusNotFound)
 	})
 	fmt.Println("server is running on port 3000")
 
-	// http.ListenAndServe("127.0.0.1:3000", http.HandlerFunc(pathRouterHandler))
 	http.ListenAndServe("127.0.0.1:3000", r)
+
+	// => VERSION [1] of regstiering a router handler
+	// http.ListenAndServe("127.0.0.1:3000", http.HandlerFunc(pathRouterHandler))
+
+	// => VERSION [2] of registering a router handler
+	// instantiate our custom router
+	// router := Router{}
+	// http.ListenAndServe("localhost:3000", router)
+
+	// => VERSION [3] of registering a router handler
+	// http.HandleFunc("/", homeHandlerFunc)
+	// http.HandleFunc("/contact", contactHandlerFunc)
+	// http.HandleFunc("/", pathRouterHandler)
 }

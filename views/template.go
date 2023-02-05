@@ -7,33 +7,40 @@ import (
 )
 
 // ! => Helpers for parsing and executing templates
-type ParsedTempalte struct {
-	template *template.Template
-	err      error
+type Template struct {
+	Template *template.Template
+	Err      error
 }
 
-func ParseTemplate(w http.ResponseWriter, templatePath string) ParsedTempalte {
+func ParseTemplate(templatePath string) Template {
 	templ, err := template.ParseFiles(templatePath)
 	if err != nil {
 		// if we here, so our template has something wrong in it
 		log.Printf("Error while parsing the template -> %v", err)
-		http.Error(w, "Server Error - Error while parsing the HTML Page", http.StatusInternalServerError)
-		return ParsedTempalte{
-			err:      err,
-			template: nil,
+		return Template{
+			Err:      err,
+			Template: nil,
 		}
 	}
-	return ParsedTempalte{
-		template: templ,
-		err:      nil,
+	return Template{
+		Template: templ,
+		Err:      nil,
 	}
 }
 
-func ExecuteTemplate(w http.ResponseWriter, parsedTemplate ParsedTempalte) {
-	err := parsedTemplate.template.Execute(w, nil)
+func (t Template) Render(w http.ResponseWriter, data interface{}) Template {
+	// execute the template and send the data
+	err := t.Template.Execute(w, data)
+	// check if there is any error
 	if err != nil {
 		log.Printf("Error while executing the template -> %v", err)
-		http.Error(w, "Server Error - Error while executing the HTML Page", http.StatusInternalServerError)
-		return
+		return Template{
+			Template: nil,
+			Err:      err,
+		}
+	}
+	return Template{
+		Err:      nil,
+		Template: t.Template,
 	}
 }
